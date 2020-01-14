@@ -1,0 +1,8 @@
+Django
+djangorestframework
+supervisor
+psycopg2==2.7.3.1
+gunicorn
+python-memcached
+structlog
+django_redis

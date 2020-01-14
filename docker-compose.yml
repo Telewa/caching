@@ -1,0 +1,62 @@
+version: "3"
+services:
+  database:
+    image: postgres:11.4-alpine
+    env_file:
+      - ./devops/secrets/compose.env
+    ports:
+      - 2345:5432
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./static:/usr/share/nginx/html/static
+    environment:
+      - 'VIRTUAL_HOST=http://*/static/*'
+      - 'VIRTUAL_HOST_WEIGHT=3'
+    expose:
+      - 80
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: cacheing
+    env_file:
+      - devops/secrets/compose.env
+    volumes:
+      - ./:/cacheing
+    depends_on:
+      - database
+    expose:
+      - 8001
+      - 8002
+      - 8003
+    command: bash -c "./devops/wait-for-it.sh -t 300 database:5432 && ./devops/server/run.sh"
+
+  lb:
+    image: dockercloud/haproxy
+    links:
+      - nginx
+      - app
+    ports:
+     - '9000:80'
+     - '1936:1936'
+    environment:
+      - BALANCE=roundrobin
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - app
+      - nginx
+
+  memcached:
+    image: memcached:alpine
+    expose:
+      - 11211
+
+  redis:
+    image: redis
+    expose:
+      - 6379
