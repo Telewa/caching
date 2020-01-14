@@ -34,6 +34,7 @@ services:
       - 8002
       - 8003
       - 8004
+      - 8004
     command: bash -c "./devops/wait-for-it.sh -t 300 database:5432 && ./devops/server/run.sh"
 
   lb:
